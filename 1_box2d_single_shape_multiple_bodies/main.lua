@@ -1,5 +1,5 @@
 -- Despite seeming like you can use a single body for multiple fixtures
--- love.physics.newFixture() copies the body
+-- love.physics.newFixture() copies the shape
 
 function love.load()
   local phys = love.physics
