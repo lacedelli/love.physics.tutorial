@@ -87,7 +87,7 @@ function createPlayer(phys)
   function player:applyMasslessForces()
     local x, y = self.body:getLinearVelocity()
     local state = self.move
-    local movementScale = 1
+    local movementScale = 1 -- Modify me for faster acceleration!
     if state == moves.right then
       if x < self.moveForce then 
         force = self.moveForce * movementScale 
@@ -101,6 +101,30 @@ function createPlayer(phys)
     end
 
     self.body:applyForce(force, y)
+  end
+
+  -- Similar to the previous method, but the object's mass is taken
+  -- into account when applying a force
+  function player:applyMassForces()
+    local x, y = self.body:getLinearVelocity()
+    local desiredVelocity = 0
+    local state = self.move
+
+    if state == moves.right then
+      desiredVelocity = self.moveForce
+    elseif state == moves.stop then
+      desiredVelocity = 0
+    elseif state == moves.left then
+      desiredVelocity = -self.moveForce
+    end
+
+    local velocityChange = desiredVelocity - x
+    -- force is calculated via the formula: f = mv/t
+    -- (mass * velocity / time), the time being "a frame" of the game
+    -- (this assumes the game runs at 60 fps), you could pass the delta time
+    -- or call love.timer.getDelta
+    local force = self.body:getMass() * velocityChange / (1/60)
+    self.body:applyForce(force, 0)
   end
 end
 
@@ -140,7 +164,8 @@ function love.update(dt)
   -- all out!
   -- player:modifyLinearVelocity()
   -- player:modifyLinearToMaxSpeed()
-  player:applyMasslessForces()
+  -- player:applyMasslessForces()
+  player:applyMassForces()
   world:update(dt)
 end
 
