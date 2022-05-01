@@ -63,7 +63,7 @@ function createPlayer(phys)
   -- the player loses velocity, the closer to 0, the faster the player
   -- stops, you can control "friction" this way, unless box2d has better
   -- options for that.
-  function player:accelerateToMaxSpeed()
+  function player:modifyLinearToMaxSpeed()
     local increment = 10
     local falloffRate = 0.88
     local x, y = self.body:getLinearVelocity()
@@ -114,7 +114,7 @@ function love.update(dt)
   -- This tutorial implements various movement methods, you can try them
   -- all out!
   -- player:modifyLinearVelocity()
-  player:accelerateToMaxSpeed()
+  player:modifyLinearToMaxSpeed()
   world:update(dt)
 end
 
