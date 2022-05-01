@@ -66,7 +66,9 @@ function createPlayer(phys)
   function player:modifyLinearToMaxSpeed()
     local increment = 10
     local falloffRate = 0.88
+
     local x, y = self.body:getLinearVelocity()
+
     local state = self.move
     if state == moves.right then    
       x = math.min(x + increment, self.moveForce)
@@ -76,6 +78,29 @@ function createPlayer(phys)
       x = math.max(x - increment, -self.moveForce)
     end
     self.body:setLinearVelocity(x, y)
+  end
+
+  -- This works pretty similarly to the previous method, where the player
+  -- body has linear acceleration and non-linear deceleration, the main 
+  -- difference is that the body moves with applied forces, rather than
+  -- through direct code interference to the linear velocity
+  function player:applyMasslessForces()
+    local x, y = self.body:getLinearVelocity()
+    local state = self.move
+    local movementScale = 1
+    if state == moves.right then
+      if x < self.moveForce then 
+        force = self.moveForce * movementScale 
+      end
+    elseif state == moves.stop then
+      force = x * -5
+    elseif state == moves.left then
+      if x > -self.moveForce then 
+       force = -self.moveForce * movementScale  
+      end
+    end
+
+    self.body:applyForce(force, y)
   end
 end
 
@@ -114,7 +139,8 @@ function love.update(dt)
   -- This tutorial implements various movement methods, you can try them
   -- all out!
   -- player:modifyLinearVelocity()
-  player:modifyLinearToMaxSpeed()
+  -- player:modifyLinearToMaxSpeed()
+  player:applyMasslessForces()
   world:update(dt)
 end
 
