@@ -100,7 +100,7 @@ function createPlayer(phys)
        force = -self.moveForce * movementScale  
       end
     end
-    self.body:applyForce(force, y)
+    self.body:applyForce(force, 0)
   end
 
   -- Similar to the previous method, but the object's mass is taken
@@ -110,7 +110,6 @@ function createPlayer(phys)
     local desiredVelocity = 0
     local state = self.move
     -- Force needs to be magnified to be effective
-    local forceScale = 10
 
     if state == moves.right then
       desiredVelocity = self.moveForce
@@ -120,7 +119,7 @@ function createPlayer(phys)
       desiredVelocity = -self.moveForce
     end
 
-    local velocityChange = (desiredVelocity * forceScale) - x
+    local velocityChange = desiredVelocity - x
     -- force is calculated via the formula: f = mv/t
     -- (mass * velocity / time), the time being "a frame" of the game
     -- (this assumes the game runs at 60 fps), you could pass the delta time
@@ -134,6 +133,7 @@ function createPlayer(phys)
   function player:applyImpulse()
     local x, y = self.body:getLinearVelocity()
     local desiredVelocity = 0
+    local state = self.move
 
     if state == moves.right then
       desiredVelocity = self.moveForce
@@ -144,12 +144,34 @@ function createPlayer(phys)
     end
     
     local velocityChange = desiredVelocity - x
+
     local impulse = self.body:getMass() * velocityChange
-    
-    self.body:applyLinearImpulse(impulse, y)
+
+    self.body:applyLinearImpulse(impulse , 0)
   end
 
+  -- The final method of the tutorial, a weird frankenstein of
+  -- the previous method and the acceleration method from before
   function player:applyAcceleratedImpulse()
+    local x, y = self.body:getLinearVelocity()
+    local desiredVelocity = 0
+    local state = self.move
+    local increment = 10
+    local falloffRate = .8
+
+    if state == moves.right then
+      desiredVelocity = math.min(x + increment, self.moveForce)
+    elseif state == moves.stop then
+      desiredVelocity = x * falloffRate
+    elseif state == moves.left then
+      desiredVelocity = math.max(x - increment, -self.moveForce)
+    end
+    
+    local velocityChange = desiredVelocity - x
+
+    local impulse = self.body:getMass() * velocityChange
+
+    self.body:applyLinearImpulse(impulse , 0)
   end
 
   -- We'll do some fancy stuff with these boys
@@ -177,6 +199,7 @@ function createPlayer(phys)
     -- Dynamically switch the movement methods during runtime
     self.movementMethods[self.movementIndex](self)
   end
+
   function player:currentMovement()
     local index = self.movementIndex
     local text = ""
@@ -258,4 +281,10 @@ function love.draw()
     player.fixture:getShape():getPoints()))
 
   love.graphics.print(player:currentMovement(), 30, 50)
+  --[[ turns out I didn't need these
+  local px, py = player.body:getLinearVelocity()
+  love.graphics.print(
+    ("player's linear impulse: \nx: %.4f\ny: %.4f"):format(px, py),
+    30, 65)
+   ]]--
 end
