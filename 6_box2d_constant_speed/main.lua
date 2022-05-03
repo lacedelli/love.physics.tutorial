@@ -88,6 +88,7 @@ function createPlayer(phys)
     local x, y = self.body:getLinearVelocity()
     local state = self.move
     local movementScale = 1 -- Modify me for faster acceleration!
+    local force = 0
     if state == moves.right then
       if x < self.moveForce then 
         force = self.moveForce * movementScale 
@@ -99,7 +100,6 @@ function createPlayer(phys)
        force = -self.moveForce * movementScale  
       end
     end
-
     self.body:applyForce(force, y)
   end
 
@@ -109,6 +109,8 @@ function createPlayer(phys)
     local x, y = self.body:getLinearVelocity()
     local desiredVelocity = 0
     local state = self.move
+    -- Force needs to be magnified to be effective
+    local forceScale = 10
 
     if state == moves.right then
       desiredVelocity = self.moveForce
@@ -118,7 +120,7 @@ function createPlayer(phys)
       desiredVelocity = -self.moveForce
     end
 
-    local velocityChange = desiredVelocity - x
+    local velocityChange = (desiredVelocity * forceScale) - x
     -- force is calculated via the formula: f = mv/t
     -- (mass * velocity / time), the time being "a frame" of the game
     -- (this assumes the game runs at 60 fps), you could pass the delta time
@@ -126,7 +128,76 @@ function createPlayer(phys)
     local force = self.body:getMass() * velocityChange / (1/60)
     self.body:applyForce(force, 0)
   end
+
+  -- This mehtod, for practical purposes is the same as the previous
+  -- one, but box2d saves us inputting the the timestep value
+  function player:applyImpulse()
+    local x, y = self.body:getLinearVelocity()
+    local desiredVelocity = 0
+
+    if state == moves.right then
+      desiredVelocity = self.moveForce
+    elseif state == moves.stop then
+      desiredVelocity = 0
+    elseif state == moves.left then
+      desiredVelocity = -self.moveForce
+    end
+    
+    local velocityChange = desiredVelocity - x
+    local impulse = self.body:getMass() * velocityChange
+    
+    self.body:applyLinearImpulse(impulse, y)
+  end
+
+  function player:applyAcceleratedImpulse()
+  end
+
+  -- We'll do some fancy stuff with these boys
+  player.movementIndex = 1
+
+  -- Update an index within the movementMethods table size
+  function player:updateMovementIndex()
+    local limit = #player.movementMethods
+    -- remember lua indexes on 1
+    player.movementIndex = (player.movementIndex % limit) + 1
+  end
+
+  -- This'll help us dynamically switch between methods and let us see
+  -- first hand how they feel
+  player.movementMethods = {
+    player.modifyLinearVelocity,
+    player.modifyLinearToMaxSpeed,
+    player.applyMasslessForces,
+    player.applyMassForces,
+    player.applyImpulse,
+    player.applyAcceleratedImpulse
+  }
+
+  function player:update()
+    -- Dynamically switch the movement methods during runtime
+    self.movementMethods[self.movementIndex](self)
+  end
+  function player:currentMovement()
+    local index = self.movementIndex
+    local text = ""
+    if index == 1 then
+      text = "modify linear velocity"
+    elseif index == 2 then
+      text = "modify linear to max speed"
+    elseif index == 3 then
+      text = "apply massless forces"
+    elseif index == 4 then
+      text = "apply mass forces"
+    elseif index == 5 then
+      text = "apply impulse"
+    elseif index == 6 then
+      text = "apply accelerated impulse"
+    end
+    return text
+  end
+
 end
+
 
 -- Check the inputs for the player, this implementation only allows for
 -- horizontal movement, if the player doesn't press anything, the 
@@ -157,15 +228,13 @@ function love.load()
                      translucent = {1, 1, 1, .2}}}
 end
 
+function love.keypressed(k)
+  if k == 'u' then player:updateMovementIndex() end
+end
 
 function love.update(dt)
   checkInput()
-  -- This tutorial implements various movement methods, you can try them
-  -- all out!
-  -- player:modifyLinearVelocity()
-  -- player:modifyLinearToMaxSpeed()
-  -- player:applyMasslessForces()
-  player:applyMassForces()
+  player:update()
   world:update(dt)
 end
 
@@ -187,4 +256,6 @@ function love.draw()
   love.graphics.setColor(colors.white.opaque)
   love.graphics.polygon("line", player.body:getWorldPoints(
     player.fixture:getShape():getPoints()))
+
+  love.graphics.print(player:currentMovement(), 30, 50)
 end
