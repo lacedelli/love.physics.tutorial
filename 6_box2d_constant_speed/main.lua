@@ -65,7 +65,7 @@ function createPlayer(phys)
   -- options for that.
   function player:modifyLinearToMaxSpeed()
     local increment = 10
-    local falloffRate = 0.88
+    local falloffRate = 1
 
     local x, y = self.body:getLinearVelocity()
 
