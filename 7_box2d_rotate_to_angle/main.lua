@@ -19,6 +19,14 @@ function love.load()
     love.graphics.getHeight() / 2, "dynamic")}
   obj.fixture = phys.newFixture(obj.body, shape)
 
+  -- Manually override the angle toward a desired point
+  -- TODO: do it
+  function obj:setAngleTo(point)
+  end
+  function obj:setAngleToMouse()
+    self:setAngleTo(mouse)
+  end
+
   -- Settings for our pointer
   mouse = {0,0}
   love.graphics.setPointSize(8)
@@ -29,6 +37,7 @@ function love.mousepressed(x, y, b)
 end
 
 function love.update(dt)
+  obj:setAngleToMouse()
   world:update(dt)
 end
 
@@ -40,4 +49,10 @@ function love.draw()
 
   love.graphics.setColor(1,1,1)
   love.graphics.points(mouse)
+
+  love.graphics.print(
+    "Body's angle: ".. math.deg(obj.body:getAngle()), 20, 20)
+  -- TODO: make this work
+  love.graphics.print(
+    "Mouse's angle, relative to body: ".. math.deg(1), 20, 35)
 end
